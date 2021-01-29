@@ -1,0 +1,46 @@
+{
+  "name": "email-validation",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node-dev --project ./tsconfig.json ./server/index.ts",
+    "tsc": "tsc --project ./tsconfig.json",
+    "frontend": "webpack --config ./webpack.config.ts",
+    "test": "mocha \"**/*.spec.ts\" --config ./.mocharc.json",
+    "test:watch": "npm run test -- --watch",
+    "redis-test": "ts-node ./server/redis.ts"
+
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@hapi/hapi": "^20.0.2",
+    "@hapi/inert": "^6.0.3",
+    "@hapi/vision": "^6.0.1",
+    "dotenv": "^8.2.0",
+    "handlebars": "^4.7.6",
+    "immer": "^8.0.0",
+    "ramda": "^0.27.1",
+    "react": "^17.0.1",
+    "react-dom": "^17.0.1",
+    "tedis": "^0.1.12"
+  },
+  "devDependencies": {
+    "@types/expect": "^24.3.0",
+    "@types/hapi__hapi": "^20.0.2",
+    "@types/hapi__inert": "^5.2.2",
+    "@types/hapi__vision": "^5.5.2",
+    "@types/mocha": "^8.0.4",
+    "chai": "^4.2.0",
+    "mocha": "^8.2.1",
+    "sass-loader": "^10.1.0",
+    "style-loader": "^2.0.0",
+    "ts-loader": "^8.0.11",
+    "ts-node": "^9.0.0",
+    "ts-node-dev": "^1.0.0",
+    "typescript": "^4.0.5",
+    "webpack": "^5.4.0",
+    "webpack-cli": "^4.2.0"
+  }
+}

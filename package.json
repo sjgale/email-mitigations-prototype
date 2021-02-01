@@ -10,7 +10,6 @@
     "test": "mocha \"**/*.spec.ts\" --config ./.mocharc.json",
     "test:watch": "npm run test -- --watch",
     "redis-test": "ts-node ./server/redis.ts"
-
   },
   "author": "",
   "license": "ISC",

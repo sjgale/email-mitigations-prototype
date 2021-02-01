@@ -41,7 +41,11 @@ const incrementCachedScore = async (session: ISession): Promise<ISession> => {
 const cacheMostRecentAttempt = (session: ISession): ISession => {
     if (session.attempts?.length >= 1) {
         const attempt = session.attempts[session.attempts.length - 1]
-        zadd(`session:${session.ip}:attempts`, { [attempt?.email]: attempt?.time })
+        zadd(
+            `session:${session.ip}:attempts`,
+            { [attempt?.email]: attempt?.time },
+            { nxxx: "NX" }
+        )
     }
     return session
 }

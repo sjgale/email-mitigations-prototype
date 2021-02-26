@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node-dev --project ./tsconfig.json ./server/index.ts",
+    "start:dev": "ts-node-dev --project ./tsconfig.json ./server/index.ts",
     "tsc": "tsc --project ./tsconfig.json",
     "frontend": "webpack --config ./webpack.config.ts",
     "test": "mocha \"**/*.spec.ts\" --config ./.mocharc.json",

@@ -8,7 +8,13 @@ enum ENTROPY_WEIGHTS {
     UNSIMILAR = 5
 }
 
-const twoOrMore = pipe(
+export const FLAG_THRESHOLD = 30
+
+export const isFlagged = (score: number): boolean => {
+    return score > FLAG_THRESHOLD
+}
+
+const twoOrMore: (arr: any[]) => boolean = pipe(
     prop('length'),
     gt(__, 2)
 )
@@ -32,7 +38,7 @@ const tooUnsimilar = pipe(
 const calculateEntropyScore = pipe(
     slice(-2, Infinity),
     lastTwo => reduce(
-        (acc, valFn) => add(call(valFn, lastTwo), acc),
+        (acc, fn) => add(call(fn, lastTwo), acc),
         0,
         [addForAttempt, tooFast, tooUnsimilar]
     )

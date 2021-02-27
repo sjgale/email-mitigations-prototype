@@ -1,45 +1,55 @@
 import { ISession, IAttempt } from '../shared-types/email'
 import { set, get, mget, zrevrange, incrby, zadd } from './redis'
-import { curry, __, ifElse, pipe, isNil, identity, andThen } from 'ramda'
+import { curry, __, ifElse, pipe, isNil, identity, andThen, not } from 'ramda'
+import { isFlagged } from './entropy-score'
 
-const sessionExists = async (ip: string): Promise<boolean> => {
-    const session = await get(`session:${ip}:flagged`)
-    return session !== null
-}
+const sessionExists = (session: ISession | undefined): boolean => !!session
 
 const getSession = async (ip: string): Promise<ISession | undefined> => {
     const [flagged, score] = await mget(`session:${ip}:flagged`, `session:${ip}:score`)
-    const { lastAttempt, timeOfLastAttempt } = await zrevrange(`session:${ip}:attempts`, 0, 0, "WITHSCORES")
-    return {
-        ip,
-        flagged: flagged === 'true',
-        score: Number(score),
-        incrementScoreBy: 0,
-        attempts: [
-            {
-                email: lastAttempt,
-                time: Number(timeOfLastAttempt)
-            }
-        ]
+    const lastCachedAttempt = await zrevrange(`session:${ip}:attempts`, 0, 0, "WITHSCORES")
+    if (not(isNil(flagged))) {
+        const [lastEmail, lastTimestamp] = Object.entries(lastCachedAttempt)[0]
+        return {
+            ip,
+            flagged: flagged === 'true',
+            _score: Number(score),
+            score: Number(score),
+            attempts: [
+                {
+                    email: lastEmail,
+                    time: Number(lastTimestamp)
+                }
+            ]
+        }
     }
 }
 
-const updateSessionFlag = async (session: ISession): Promise<ISession> => {
-    await set(`session:${session.ip}:flagged`, session.flagged ? 'true' : 'false')
+const updateCachedSession = (session: ISession): ISession => pipe(
+    updateCachedFlag,
+    incrementCachedScore,
+    cacheMostRecentAttempt
+)(session)
+
+const updateCachedFlag = (session: ISession): ISession => {
+    set(`session:${session.ip}:flagged`, session.flagged ? 'true' : 'false')
     return session
 }
 
-const incrementCachedScore = async (session: ISession): Promise<ISession> => {
-    const score = await incrby(`session:${session.ip}:score`, session.incrementScoreBy)
-    const updatedSession = Object.assign({}, session, {
-        score,
-        incrementScoreBy: 0
-    })
-    return updatedSession
+const updateFlag = (session: ISession): ISession => {
+    return { ...session, flagged: isFlagged(session.score) }
+}
+
+const incrementCachedScore = (session: ISession): ISession => {
+    let score = session.score - session._score
+    if (score > 0) {
+        incrby(`session:${session.ip}:score`, Number(score))
+    }
+    return session
 }
 
 const cacheMostRecentAttempt = (session: ISession): ISession => {
-    if (session.attempts?.length >= 1) {
+    if (session.attempts?.length > 0) {
         const attempt = session.attempts[session.attempts.length - 1]
         zadd(
             `session:${session.ip}:attempts`,
@@ -55,13 +65,12 @@ const addAttemptToSession = curry(
         ({ ...session, attempts: [...session.attempts, attempt] })
 )
 
-const buildNewSession = (ip: string): () => ISession => () => {
-    console.log('creating a new session!')
+const buildNewSession = (ip: string) => (): ISession => {
     const newSession = {
         ip,
         flagged: false,
         score: 0,
-        incrementScoreBy: 0,
+        _score: 0,
         attempts: [{
             email: null,
             time: Date.now()
@@ -70,21 +79,25 @@ const buildNewSession = (ip: string): () => ISession => () => {
     return newSession
 }
 
-const getOrInitSession = async (ip: string): Promise<ISession> => pipe(
+const getOrInitSession = (ip: string): Promise<ISession> => pipe(
     getSession,
-    andThen(ifElse(
-        isNil,
-        buildNewSession(ip),
-        identity
-    ))
-)
+    andThen(
+        ifElse(
+            sessionExists,
+            identity,
+            buildNewSession(ip)
+        )
+    )
+)(ip)
 
 export {
     getOrInitSession,
     getSession,
     sessionExists,
-    updateSessionFlag,
+    updateCachedFlag,
     incrementCachedScore,
     cacheMostRecentAttempt,
-    addAttemptToSession
+    addAttemptToSession,
+    updateFlag,
+    updateCachedSession
 }

@@ -13,7 +13,7 @@ const EventLog = () => {
 
     return (
         <section>
-            <h2>My Session</h2>
+            <h2>Most Recent Attempts</h2>
             <table className="pure-table">
                 <thead>
                     <tr>
@@ -25,9 +25,8 @@ const EventLog = () => {
                 <tbody>
                     {attempts.map((attempt) => (
                         <tr key={attempt.time}>
-                            {keys.map((key) => (<td
-                                    key={`${attempt.time}-${attempt[key]}`}
-                                >
+                            {keys.map((key) => (
+                                <td key={`${attempt.time}-${attempt[key]}`}>
                                     {attempt[key]}
                                 </td>
                             ))}

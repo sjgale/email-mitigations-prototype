@@ -2,8 +2,8 @@ export interface ISession {
     ip: string
     flagged: boolean
     score: number
-    incrementScoreBy: number
     attempts: IAttempt[]
+    _score: number
 }
 
 export interface IAttempt {
